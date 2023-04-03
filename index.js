@@ -1,7 +1,12 @@
+const axios = require('axios');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { findSimilarMovies } = require('./utils/findByGenre');
 
 const { Client, IntentsBitField, Partials } = require('discord.js');
+
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_API_URL = process.env.TMDB_API_URL || 'https://api.themoviedb.org/3';
 
 const client = new Client({
   intents: [
@@ -26,15 +31,39 @@ client.on('messageCreate', async message => {
   if (message.content.startsWith('!movieslike')) {
     const movieName = message.content.slice('!movieslike'.length).trim();
     // TODO: Implement logic for finding similar movies based on the given movie
-
     try {
       if (!movieName) {
-        const response = await message.reply('I am a movieslike bot! Enter the name of a movie to find similar movies.');
+        const response = await message.reply('I am the movieslike boy. Enter the name of a movie to find similar movies.');
         console.log(`Message sent: ${response.content}`);
       } else {
-        // TODO: Implement logic for finding similar movies based on the given movie
-        const response = await message.reply('I am an egg bot. Please donate to the church of Dr. Ivo Robotnik.');
-        console.log(`Message sent: ${response.content}`);
+        const { data } = await axios.get(`${TMDB_API_URL}/search/movie`, {
+          params: {
+            api_key: TMDB_API_KEY,
+            query: movieName,
+          },
+        });
+
+        console.log(data); // log the response from the API
+    
+        if (data.results.length === 0) {
+          const response = await message.reply(`Sorry, I couldn't find a movie called "${movieName}".`);
+          console.log(`Message sent: ${response.content}`);
+        } else {
+          const queryMovie = data.results[0];
+    
+          const similarMovies = await findSimilarMovies(queryMovie, new Date(queryMovie.release_date));
+    
+          console.log(similarMovies);
+          
+          if (similarMovies.length === 0) {
+            const response = await message.reply(`Sorry, I couldn't find any similar movies for "${queryMovie.title}".`);
+            console.log(`Message sent: ${response.content}`);
+          } else {
+            const responseMessage = `Similar movies to "${queryMovie.title}" (${queryMovie.release_date.slice(0, 4)}):\n${similarMovies.map(movie => movie.title).join('\n')}`;
+            const response = await message.reply(responseMessage);
+            console.log(`Message sent: ${response.content}`);
+          }
+        }
       }
     } catch (error) {
       console.error(`Error sending message: ${error}`);
