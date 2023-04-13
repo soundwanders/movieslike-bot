@@ -3,10 +3,10 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { Client, IntentsBitField, Partials } = require('discord.js');
 const { findSimilarMovies } = require('./utils/findMovies');
+const { generateMovieLinks } = require('./utils/generateMovieLinks');
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = process.env.TMDB_API_URL || 'https://api.themoviedb.org/3';
-const TMDB_BASE_URL = process.env.TMDB_BASE_URL || 'https://www.themoviedb.org';
 
 const client = new Client({
   intents: [
@@ -27,38 +27,40 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-// Set number of results to display
-const numResults = 3;
-
-const generateMovieLinks = (movies) => {
-  // Limit the number of movies to numResults
-  const limitedMovies = movies.slice(0, numResults);
-
-  const movieLinks = limitedMovies.map(movie => {
-    const tmdbUrl = `${TMDB_BASE_URL}/movie/${movie.id}`;
-    return `[${movie.title}](${tmdbUrl})`;
-  });
-
-  // Join the movieLinks array with line breaks
-  return movieLinks.join('\n');
-};
-
-// Discord client event handler. AKA Bring the robot to life.
+// Discord client event handler brings the robot to life.
 client.on('messageCreate', async message => {
   if (message.content.startsWith('!movieslike')) {
-    const movieName = message.content.slice('!movieslike'.length).trim();
+    const input = message.content.slice('!movieslike'.length).trim();
 
     try {
-      if (!movieName) {
-        // Send a response to the user if movie name is not provided
-        const response = await message.reply('I am the movieslike bot. Enter the name of a movie to find similar titles.');
+      if (!input) {
+        // Send a response to the user if input is not provided
+        const response = await message.reply('I am the movieslike bot. Enter the name of a movie or use query parameters to find similar titles.\nExample usage: `!movieslike movieName --genre=genreName --actor=actorName --language=languageCode`');
         console.log(`Message sent: ${response.content}`);
       } else {
-        // Fetch movie data using axios
+        // Define regex patterns for different query parameters
+        // Matches --param= followed by any characters except -- and whitespace
+        const movieNamePattern = /([^--\s]+)/i; 
+        const genrePattern = /--genre=([^--\s]+)/gi; 
+        const actorPattern = /--actor=([^--\s]+)/gi; 
+        const languagePattern = /--language=([^--\s]+)/i; 
+        
+        const movieNameMatch = input.match(movieNamePattern);
+        const genreMatches = input.match(genrePattern);
+        const actorMatches = input.match(actorPattern);
+        const languageMatch = input.match(languagePattern);
+        
+        const movieName = movieNameMatch ? movieNameMatch[1].trim() : null;
+        
+        // Fetch movie data using axios with query parameters
+        // Add genre, actor, language query params if available
         const { data } = await axios.get(`${TMDB_API_URL}/search/movie`, {
           params: {
             api_key: TMDB_API_KEY,
             query: movieName,
+            ...(genreMatches && { with_genres: genreMatches.map(genre => genre.trim()).join(',') }), 
+            ...(actorMatches && { with_cast: actorMatches.map(actor => actor.trim()).join(',') }),
+            ...(languageMatch && { with_original_language: languageMatch[1] }),
           },
         });
 
@@ -67,15 +69,11 @@ client.on('messageCreate', async message => {
           const response = await message.reply(`Sorry, I can't find any movies similar to "${movieName}".`);
           console.log(`Error message sent: ${response.content}`);
         } else {
-          // Get the first result as the queryMovie object
           const queryMovie = data.results[0];
 
-          // Convert release_date to a valid time value
-          queryMovie.release_date = new Date(queryMovie.release_date).toISOString();
-          
           // Call findSimilarMovies function to get similar movies
-          const similarMovies = await findSimilarMovies(queryMovie, queryMovie.release_date);
-
+          const similarMovies = await findSimilarMovies(queryMovie, queryMovie.release_date, genreMatches, actorMatches, languageMatch);
+          
           if (similarMovies && similarMovies.length > 0) {
             // Generate the movie links
             const movieLinks = generateMovieLinks(similarMovies);
@@ -91,7 +89,7 @@ client.on('messageCreate', async message => {
       }
     } catch (error) {
         console.error(`Error sending message: ${error}`);
-        const response = await message.reply('Robot mutiny detected. There was an error fetching movie data from the TMDB API.');
+        const response = await message.reply('Possible robot mutiny detected. Unable to fetch movie data from TMDB API.');
         console.log(`Message sent: ${response}`);
     }
   }
