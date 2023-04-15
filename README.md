@@ -16,21 +16,22 @@ __queryMovieReleaseDate__ (optional): The release date of the query movie in the
 <br> This is used to filter through the TMDB API, pulling similar movies released within 40 years of the selected movie.
 
 __options__ (optional): An object containing additional search criteria for finding similar movies.
-  -  `actors`: An array of actor names to filter by.
-  -  `genres`: An array of genre names to filter by.
-  -  `language`: An array of language names to filter by.
+  -  `actor`: An array of actor names pulled from the movie's credits.
+  -  `genre`: An array of genre names used to filter by query.
+  -  `language`: An array of languages to filter films by.
   -  `sort_by`: A string representing the sorting criteria for the results.
 <br>
 
 ## Example Commands
+- commands are not case sensitive! For example, "!movieslike Titanic" and !movieslike titanic" return the same results.
 
-Search for similar movies to "Titanic" with the genre "drama":
+Search for similar movies to "Osmosis Jones" with the genre "drama":
 
-    !movieslike Titanic --genre=drama
+    !movieslike Osmosis Jones --genre=drama
 
-Search for similar movies to "Benchwarmers" with actor "Jon Heder":
+Search for similar movies to "The Shining" with actor "Jon Heder":
 
-    !movieslike Benchwarmers --actors=Jon Heder
+    !movieslike The Shining --actor=Jon Heder
 
 Search for similar movies to "Avatar" with English language preference:
 
@@ -46,11 +47,8 @@ Search for similar movies to "The Godfather" with multiple genre filters:
 
 Search for similar movies to "Star Wars" with a combination of actors, genre, and language filters:
 
-    !movieslike "Star Wars" --actors=Mark Hamill --actors=Harrison Ford --genre=sci-fi --language=en
+    !movieslike Blue Valentine --actors=Mark Hamill --actors=Harrison Ford --genre=sci-fi --language=en
 
 <br>
-
-## Function Signature 
-<code>async function findSimilarMovies(queryMovie, queryMovieReleaseDate, options = {})</code>
 
 # All movie data sourced from [The Movie Database](https://www.themoviedb.org/) API
