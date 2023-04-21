@@ -59,7 +59,7 @@ client.on('messageCreate', async (message) => {
       }
     } catch (error) {
       console.error(`Error sending message: ${error}`);
-      const response = await message.reply('Possible robot mutiny detected. Unable to fetch movie data from TMDB API.');
+      const response = await message.reply('Robot mutiny has occurred. Unable to fetch movie data from TMDB API.');
       console.log(`Message sent: ${response}`);
     }
   }

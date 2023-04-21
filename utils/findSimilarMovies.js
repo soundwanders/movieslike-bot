@@ -12,16 +12,13 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
     const minReleaseYear = releaseYear - 40;
     const maxReleaseYear = releaseYear + 40;
 
-    // Extract the actor name from the actorMatches array
-    const actorName = actorMatches ? actorMatches[0].replace('--actor=', '').trim() : '';
-
     const { data } = await axios.get(`${TMDB_API_URL}/movie/${queryMovie.id}/similar`, {
       params: {
         api_key: TMDB_API_KEY,
         language: 'en-US',
-        with_genres: genreMatches.map((genre) => genre.trim()).join(','),
-        with_cast: actorMatches.map((actor) => actor.trim()).join(','),
-        with_original_language: languageMatch[1],
+        with_genres: genreMatches && genreMatches.map((genre) => genre.trim()).join(','),
+        with_cast: actorMatches && actorMatches.map((actor) => actor.trim()).join(','),
+        with_original_language: languageMatch && languageMatch[1],
         'primary_release_date.gte': `${minReleaseYear}-01-01`,
         'primary_release_date.lte': `${maxReleaseYear}-12-31`,
         page: 1,
@@ -36,8 +33,6 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
       const sharedGenres = movie.genre_ids.filter((genreId) => queryMovie.genre_ids.includes(genreId));
 
       movie.sharedGenres = sharedGenres.length;
-
-      // Add other similarity factors as needed, e.g. shared actors, directors, keywords, etc.
 
       // Calculate similarity score
       movie.similarityScore = movie.sharedGenres;
@@ -75,8 +70,8 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
 
         similarMovies = similarMovieCredits.filter((movie) => {
           const movieCast = movie.cast.map((cast) => cast.name.toLowerCase());
-          const actorNameLower = actorName.toLowerCase();
-          return movieCast.includes(actorNameLower);
+          const actorMatchesLower = actorMatches.map((actor) => actor.toLowerCase());
+          return actorMatchesLower.some((actor) => movieCast.includes(actor));
         });
       }
 
