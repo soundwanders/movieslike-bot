@@ -8,6 +8,7 @@ const { moreCommand } = require('./utils/commands/more');
 const { movieslikeCommand } = require('./utils/commands/movieslike');
 const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('./utils/regExPatterns');
 const { STATES, updateState, getCurrentState } = require('./utils/states');
+const movieJuice = require('./movieJuice.js');
 
 const client = new Client({
   intents: [
