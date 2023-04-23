@@ -10,7 +10,7 @@ const moreCommand = async (message, similarMovies, currentIndex, botResponse, up
       const movieLinks = generateMovieLinks(nextMovies);
 
       // Create the response with the movie links
-      const response = `Here are more similar movies you might like: \n${movieLinks}`;
+      const response = `Here are some similar movies you might enjoy: \n${movieLinks}`;
       await botResponse(message, response);
 
       // Update the current index

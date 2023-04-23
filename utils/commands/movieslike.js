@@ -15,7 +15,12 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
       const movieNameMatch = input.match(movieNamePattern);
       const genreMatches = input.match(genrePattern);
       const actorMatches = input.match(actorPattern);
-      const languageMatch = input.match(languagePattern);
+      const languageMatches = input.match(languagePattern);
+
+      console.log('movieNameMatch', movieNameMatch);
+      console.log('genreMatches', genreMatches);
+      console.log('actorMatches', actorMatches);
+      console.log('languageMatches', languageMatches);
       
       const movieName = movieNameMatch ? movieNameMatch[1].trim() : null;
 
@@ -27,7 +32,7 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
           query: movieName,
           ...(genreMatches && { with_genres: genreMatches.map((genre) => genre.trim()).join(',') }),
           ...(actorMatches && { with_cast: actorMatches.map((actor) => actor.trim()).join(',') }),
-          ...(languageMatch && { with_original_language: languageMatch[1] }),
+          ...(languageMatches && { with_original_language: languageMatches[1] }),
         },
       });
 
@@ -38,7 +43,7 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
         const queryMovie = data.results[0];
 
         // Call findSimilarMovies function to get similar movies
-        let similarMovies = await findSimilarMovies(queryMovie, queryMovie.release_date, genreMatches, actorMatches, languageMatch);
+        let similarMovies = await findSimilarMovies(queryMovie, queryMovie.release_date, genreMatches, actorMatches, languageMatches);
 
         if (similarMovies && similarMovies.length > 0) {
           // Generate the movie links
