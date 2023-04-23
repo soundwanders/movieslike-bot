@@ -43,7 +43,7 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
 
     let similarMovies = data.results;
 
-    // Calculate similarity score for each similar movie based on multiple factors
+    // Calculate similarity score for each movie to improve search results
     similarMovies = similarMovies.map((movie) => {
       const sharedGenres = movie.genre_ids.filter((genreId) => queryMovie.genre_ids.includes(genreId));
       movie.sharedGenres = sharedGenres.length;
