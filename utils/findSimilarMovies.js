@@ -16,17 +16,21 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
     const maxReleaseYear = releaseYear + 40;
     
     // Normalize language input to Unicode value
-    // for example, 'english' would be converted to its language code, 'en'
-    const normalizedLanguageMatches = languageMatches.map((language) => {
-      const normalizedLanguage = languageMap[language.toLowerCase()];
-      return normalizedLanguage || language;
-    });
+    // for example, 'english' is converted to its language code, 'en'
+    let normalizedLanguageMatches = [];
+    if (languageMatches) {
+      normalizedLanguageMatches = languageMatches.map((language) => {
+        const normalizedLanguage = languageMap[language.toLowerCase()];
+        return normalizedLanguage || language;
+      });
+    }
 
     // Create an array of Unicode language values
-    const unicodeLanguageMatches = languageMatches.map((language) => {
+    const unicodeLanguageMatches = languageMatches ? languageMatches.map((language) => {
       return languageMap[language.toLowerCase()];
-    });
-    
+    }) : [];
+
+    // Concatenate our unicode and normalized languages into one array
     const languageValues = [...normalizedLanguageMatches, ...unicodeLanguageMatches].filter((language) => language);
     
     const { data } = await axios.get(`${TMDB_API_URL}/movie/${queryMovie.id}/similar`, {
@@ -58,7 +62,7 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
     // Filter our query movie from the API results
     similarMovies = similarMovies.filter((movie) => movie.id !== queryMovie.id);
 
-    // Define empty array which will be populated with our filtered movies
+    // Define empty array which will be populated with our similar movies
     let filteredMovies = [];
 
     // Fetch the list of query movie's genres
@@ -107,7 +111,6 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
 
     // Sort movies based on popularity in descending order
     filteredMovies.sort((a, b) => b.popularity - a.popularity);
-
     return filteredMovies;
   } catch (error) {
     console.error('Error finding similar movies:', error);
