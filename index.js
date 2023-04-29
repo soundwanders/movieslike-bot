@@ -50,14 +50,12 @@ client.on('messageCreate', async (message) => {
       } else {
         console.log('currentState' , currentState)
         // Call movieslikeCommand function to return movies from TMDB API that are similar to the query movie
-        await movieslikeCommand(input, message, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks);
-      }
-
-      // Call moreCommand function to show a list of additional movies from similarMovies array
-      if (currentState === STATES.MOVIESLIKE && message.content === '!more') {
-        currentState = STATES.MORE;
-        console.log('second updateState', currentState);
-        await moreCommand(message, similarMovies, currentIndex, botResponse, updateState, STATES, generateMovieLinks);
+        await movieslikeCommand(input, message, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks, async () => {
+          // This is the callback function that will be called when the user types !more
+          currentState = STATES.MORE;
+          console.log('second updateState', currentState);
+          await moreCommand(message, similarMovies, currentIndex, botResponse, updateState, STATES, generateMovieLinks);
+        });
       }
     } catch (error) {
       console.error(`Error sending message: ${error}`);
@@ -66,6 +64,5 @@ client.on('messageCreate', async (message) => {
     }
   }
 });
-
 
 client.login(process.env.DISCORD_BOT_TOKEN);
