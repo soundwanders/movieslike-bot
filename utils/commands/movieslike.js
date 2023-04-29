@@ -62,7 +62,7 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
             response += `Language: ${languageMatches && languageMatches.map((language) => language.trim()).join(', ')}\n`;
           }
 
-          response += '\nHere are a few similar movies you might like...\n\n';
+          response += '\nHere are a few more you might enjoy...\n\n';
           response += movieLinks;
 
           await botResponse(message, response);

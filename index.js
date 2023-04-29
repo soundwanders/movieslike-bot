@@ -1,8 +1,8 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { Client, IntentsBitField, Partials } = require('discord.js');
-const { findSimilarMovies } = require('./utils/findSimilarMovies');
 const { botResponse } = require('./utils/botResponse');
+const { findSimilarMovies } = require('./utils/findSimilarMovies');
 const { generateMovieLinks } = require('./utils/generateMovieLinks');
 const { moreCommand } = require('./utils/commands/more');
 const { movieslikeCommand } = require('./utils/commands/movieslike');
@@ -19,9 +19,7 @@ const client = new Client({
     IntentsBitField.Flags.GuildMessageReactions,
     IntentsBitField.Flags.MessageContent,
   ],
-  
-  // [Partials.Channel] means the bot will cache channels as partials
-  // partials makes sure the bot can respond to certain events before Discord sends back the event data
+  // partials makes sure bot can respond to certain events before Discord sends back the event data
   partials: [Partials.Channel]
 });
 
@@ -40,7 +38,7 @@ client.on('messageCreate', async (message) => {
   currentState = getCurrentState();
 
   if (message.content.startsWith('!movieslike')) {
-    updateState(STATES.MOVIESLIKE);
+    currentState = STATES.MOVIESLIKE;
     const input = message.content.slice('!movieslike'.length).trim();
 
     try {
@@ -50,12 +48,15 @@ client.on('messageCreate', async (message) => {
         \nFor example: \`!movieslike movieName --genre=genreName --actor=actorName\``;
         await botResponse(message, response);
       } else {
+        console.log('currentState' , currentState)
         // Call movieslikeCommand function to return movies from TMDB API that are similar to the query movie
         await movieslikeCommand(input, message, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks);
       }
 
       // Call moreCommand function to show a list of additional movies from similarMovies array
       if (currentState === STATES.MOVIESLIKE && message.content === '!more') {
+        currentState = STATES.MORE;
+        console.log('second updateState', currentState);
         await moreCommand(message, similarMovies, currentIndex, botResponse, updateState, STATES, generateMovieLinks);
       }
     } catch (error) {

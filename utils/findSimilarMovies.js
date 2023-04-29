@@ -112,8 +112,6 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
       return null;
     };
 
-    // Sort movies based on popularity in descending order
-    filteredMovies.sort((a, b) => b.popularity - a.popularity);
     return filteredMovies;
   } catch (error) {
     console.error('Error finding similar movies:', error);
