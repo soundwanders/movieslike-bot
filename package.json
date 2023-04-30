@@ -9,6 +9,11 @@
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage"
   },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/__tests__/__mocks__/"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/soundwanders/movieslike-bot.git"

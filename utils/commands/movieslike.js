@@ -7,11 +7,17 @@ const TMDB_API_URL = process.env.TMDB_API_URL || 'https://api.themoviedb.org/3';
 const movieslikeCommand = async (input, message, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks) => {
   try {
     if (!input) {
-      // Send an intro response to the user if command is just '!movieslike'
+      // Send an intro response to the user if command is empty (!movieslike)
       const response = `I am the movieslike bot. Enter the name of a movie and I'll find some similar titles.
         \nFor example: \`!movieslike movieName --genre=genreName --actor=actorName\``;
       await botResponse(message, response);
     } else {
+      // Check if input contains invalid parameter values
+      if ((genrePattern && !genrePattern.test(input)) || (actorPattern && !actorPattern.test(input)) || (languagePattern && !languagePattern.test(input))) {
+        const response = 'Sorry, there seems to be some invalid query parameter values in your search, please try again!';
+        await botResponse(message, response);
+      }
+
       const movieNameMatch = input.match(movieNamePattern);
       const genreMatches = input.match(genrePattern);
       const actorMatches = input.match(actorPattern);
@@ -33,9 +39,9 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
       });
 
       if (!data.results || data.results.length === 0) {
-        const response =`Sorry! I couldn't find any movies similar to "${movieName}" that match your criteria. 
-        This may be because the movie is too unique, or it doesn't have any close matches in my database. 
-        Please try a different movie or adjust your search criteria.`;
+        const response =`Sorry! I couldn\'t find any movies similar to ${movieName} that match your criteria. 
+          This may be because the movie is too unique or it is simply not in the TMDB database. 
+          Please try a different movie or adjust your search criteria.`;
         await botResponse(message, response);
       } else {
         const queryMovie = data.results[0];
@@ -67,14 +73,14 @@ const movieslikeCommand = async (input, message, botResponse, movieNamePattern, 
 
           await botResponse(message, response);
         } else {
-          const response =`Sorry! I couldn't find any movies similar to "${movieName}" that match your search criteria. Please try a new search`;
+          const response =`Sorry! I couldn't find any movies similar to "${movieName}" that match your search criteria. Please try a new search.`;
           await botResponse(message, response);
         }
       }
     }
   } catch (error) {
     console.error('Error fetching movie data:', error);
-    await botResponse(message, 'Sorry, something went wrong. Please try again later.');
+    await botResponse(message, 'Sorry, looks like I am unable to fetch data from the TMDB API. Please try again later.');
   }
 };
 
