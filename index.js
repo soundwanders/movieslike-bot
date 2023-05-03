@@ -1,13 +1,13 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { Client, IntentsBitField, Partials } = require('discord.js');
-const { botResponse } = require('./utils/botResponse');
-const { findSimilarMovies } = require('./utils/findSimilarMovies');
-const { generateMovieLinks } = require('./utils/generateMovieLinks');
-const { moreCommand } = require('./utils/commands/more');
-const { movieslikeCommand } = require('./utils/commands/movieslike');
-const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('./utils/regExPatterns');
-const { STATES, updateState, getCurrentState } = require('./utils/states');
+const { botResponse } = require('./components/utils/botResponse');
+const { findSimilarMovies } = require('./components/query/findSimilarMovies');
+const { generateMovieLinks } = require('./components/query/generateMovieLinks');
+const { moreCommand } = require('/components/commands/more');
+const { movieslikeCommand } = require('./components/commands/movieslike');
+const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('./components/utils/regExPatterns');
+const { STATES, updateState, getCurrentState } = require('./components/utils/states');
 const movieJuice = require('./movieJuice.js');
 
 const client = new Client({
