@@ -5,10 +5,10 @@ const { mockFindSimilarMovies } = require('./__mocks__/mockFindSimilarMovies');
 const { mockGenerateMovieLinks } = require('./__mocks__/mockGenerateMovieLinks');
 const { mockMovie } = require('./__mocks__/mockMovieObject');
 const { mockMoviesArray } = require('./__mocks__/mockMoviesArray');
-const { testResponse } = require('./__mocks__/testResponse');
-const { movieslikeCommand } = require('../utils/commands/movieslike');
-const { generateMovieLinks } = require('../utils/generateMovieLinks');
-const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('../utils/regExPatterns');
+const { defaultResponse } = require('./__mocks__/defaultResponse');
+const { movieslikeCommand } = require('../components/commands/movieslike');
+const { generateMovieLinks } = require('../components/query/generateMovieLinks');
+const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('../components/utils/regExPatterns');
 
 describe('movieslikeCommand', () => {
   let client;
@@ -40,7 +40,7 @@ describe('movieslikeCommand', () => {
     const response = await movieslikeCommand(
       message.content,
       message,
-      testResponse,
+      defaultResponse,
       movieNamePattern,
       genrePattern,
       actorPattern,
@@ -138,36 +138,84 @@ describe('movieslikeCommand', () => {
   });
 
   // 6. RETURN RELEVANT SIMILAR MOVIES USING GENRE QUERY PARAM
-  it('should return similar movies based on movie name and genre', async () => {
-    const genre = 'Comedy';
-    const message = { content: `!movieslike movieName --genre=${genre}` };
-    const links = mockGenerateMovieLinks(mockMoviesArray);
-    const expectedResponse = `You searched for movies like ${mockMovie.title}\nGenre: ${genre}\n\nHere are a few more you might enjoy...\n\n${links}`;
-    await movieslikeCommand(
-      message.content,
-      message,
-      mockBotResponse,
-      movieNamePattern,
-      genrePattern,
-      actorPattern,
-      languagePattern,
-      mockFindSimilarMovies,
-      mockGenerateMovieLinks
-    );
+  describe('movieslikeTests', () => {
+    describe('movieslikeCommand', () => {
+      it('should generate movie links for similar movies when movie name and genre are passed', async () => {
+        const input = 'Test Movie --genre=action';
+        const botResponse = jest.fn(async () => {});
+        
+        const mockGenerateMovieLinks = (similarMovies) => {
+          return similarMovies.map((movie) => `[${movie.title}](https://www.themoviedb.org/movie/${movie.id})`).join('\n');
+        };
+        
+        const mockFindSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMatches, languageMatches) => {
+          const similarMovies = [
+            { id: 2, title: 'Test Movie 2', genre_ids: [28, 80], similarityScore: 4 },
+            { id: 3, title: 'Test Movie 3', genre_ids: [28, 35], similarityScore: 3 },
+            { id: 4, title: 'Test Movie 4', genre_ids: [12, 16], similarityScore: 2 },
+            { id: 5, title: 'Test Movie 5', genre_ids: [28, 53], similarityScore: 1 }
+          ];
 
-    expect(mockBotResponse).toHaveBeenCalledWith(message, expectedResponse);
+          const filteredMovies = similarMovies
+            .filter((movie) => movie.id !== queryMovie.id)
+            .filter((movie) => {
+              if (genreMatches) {
+                const genres = genreMatches.filter((genre) => movie.genre_ids.includes(genre.toLowerCase()));
+                return genres.length === genreMatches.length;
+              }
+              return true;
+            })
+            .sort((a, b) => b.similarityScore - a.similarityScore);
+
+          if (filteredMovies.length === 0) {
+            return null;
+          }
+
+          return filteredMovies;
+        };
+
+        await movieslikeCommand(input, {}, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, mockFindSimilarMovies, mockGenerateMovieLinks);
+
+        expect(botResponse).toHaveBeenCalledTimes(2);
+        expect(botResponse).toHaveBeenCalledWith({}, expect.stringContaining('Here are a few more you might enjoy...'));
+        expect(botResponse).toHaveBeenCalledWith({}, expect.stringContaining('Test Movie 2\nTest Movie 3\n'));
+        expect(mockFindSimilarMovies).toHaveBeenCalledWith(
+          { id: 1, title: 'Test Movie', genre_ids: [12, 28, 53] },
+          undefined,
+          ['Action'],
+          undefined,
+          undefined
+        );
+        expect(mockGenerateMovieLinks).toHaveBeenCalledWith(
+          [
+            { id: 2, title: 'Test Movie 2', genre_ids: [28, 80], similarityScore: 4 },
+            { id: 3, title: 'Test Movie 3', genre_ids: [28, 35], similarityScore: 3 }
+          ]
+        );
+      });
+    });
   });
-  
+
   // 7. RETURN RELEVANT SIMILAR MOVIES USING ACTOR QUERY PARAM
   it('should return similar movies based on movie name and actor', async () => {
-    const actor = 'Tom Hanks';
-    const input = `!movieslike Castaway --actor=${actor}`;
-    const links = mockGenerateMovieLinks(mockMoviesArray);
-    const expectedResponse = `You searched for movies like ${mockMovie.title}\nActor: ${actor}\n\nHere are a few more you might enjoy...\n\n${links}`;
+    const input = 'Test Movie --actor="Actor" --actor="Snacker"';
+    const botResponse = jest.fn(async () => {});
   
-    await movieslikeCommand(input, message, mockBotResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, mockFindSimilarMovies, mockGenerateMovieLinks);
+    const mockGenerateMovieLinks = (similarMovies) => {
+      return similarMovies.map((movie) => `[${movie.title}](https://www.themoviedb.org/movie/${movie.id})`).join('\n');
+    };
   
-    expect(mockBotResponse).toHaveBeenCalledWith(message, expectedResponse);
+    await movieslikeCommand(input, {}, botResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, mockFindSimilarMovies, mockGenerateMovieLinks);
+  
+    expect(botResponse).toHaveBeenCalledTimes(2);
+    expect(botResponse).toHaveBeenCalledWith({}, expect.stringContaining('Here are a few more you might enjoy...'));
+    expect(mockFindSimilarMovies).toHaveBeenCalledWith(
+      { id: 1, title: 'Test Movie' },
+      undefined,
+      undefined,
+      ['Actor', 'Snacker'],
+      undefined
+    );
   });
   
   // 8. RETURN RELEVANT SIMILAR MOVIES USING LANGUAGE QUERY PARAM
@@ -180,7 +228,7 @@ describe('movieslikeCommand', () => {
     await movieslikeCommand(
       input, 
       message, 
-      testResponse, 
+      defaultResponse, 
       movieNamePattern, 
       genrePattern, 
       actorPattern, 
@@ -189,12 +237,14 @@ describe('movieslikeCommand', () => {
       mockGenerateMovieLinks
     );
   
-    expect(testResponse).toHaveBeenCalledWith(message, expectedResponse);
+    expect(defaultResponse).toHaveBeenCalledWith(message, expectedResponse);
   });
 
   // 9. RETURN RELEVANT SIMILAR MOVIES USING LANGUAGE AND ACTOR QUERY PARAMS
   it('should return similar movies based on movie name, language, and actor', async () => {
     const language = 'en';
+    const actor= 'chapes';
+    const message = '';
     const input = `!movieslike movieName --language=${language} --actor=${actor}`;
     const links = mockGenerateMovieLinks(mockMoviesArray);
     const expectedResponse = `You searched for movies like ${mockMovie.title}\nLanguage: ${language}\nActor: ${actor}\n\n Here are a few more you might enjoy...\n\n${links}`;
@@ -202,7 +252,7 @@ describe('movieslikeCommand', () => {
     await movieslikeCommand(
       input, 
       message, 
-      testResponse, 
+      defaultResponse, 
       movieNamePattern, 
       genrePattern, 
       actorPattern, 
@@ -211,7 +261,7 @@ describe('movieslikeCommand', () => {
       mockGenerateMovieLinks
     );
   
-    expect(testResponse).toHaveBeenCalledWith(message, expectedResponse);
+    expect(defaultResponse).toHaveBeenCalledWith(message, expectedResponse);
   });
   
   // 10. RETURN RELEVANT SIMILAR MOVIES WHEN ALL OPTIONAL QUERY PARAMETERS ARE INCLUDED
@@ -219,21 +269,22 @@ describe('movieslikeCommand', () => {
     // Set up mock input and parameters for the `movieslike` command
     const input = '!movieslike The Matrix --genre=Action --actor=Keanu Reeves --language=en';
     const message = {};
+    const mockTestResponse = jest.fn();
   
     // Create mock functions for `findSimilarMovies` and `generateMovieLinks`
     const findSimilarMovies = jest.fn(() => Promise.resolve([{ title: 'The Matrix Reloaded', release_date: '2003-05-15' }, { title: 'John Wick', release_date: '2014-10-24' }]));
     const generateMovieLinks = jest.fn((movies) => movies.map((movie) => `${movie.title} (${movie.release_date})`).join('\n'));
   
     // Call the `movieslike` command with the mock input and parameters
-    await movieslikeCommand(input, message, testResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks);
+    await movieslikeCommand(input, message, mockTestResponse, movieNamePattern, genrePattern, actorPattern, languagePattern, findSimilarMovies, generateMovieLinks);
   
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('You searched for movies like The Matrix'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('Genre: Action'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('Actor: Keanu Reeves'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('Language: en'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('Here are a few more you might enjoy...'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('The Matrix Reloaded (2003-05-15)'));
-    expect(testResponse).toHaveBeenCalledWith(message, expect.stringContaining('John Wick (2014-10-24)'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('You searched for movies like The Matrix'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('Genre: Action'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('Actor: Keanu Reeves'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('Language: en'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('Here are a few more you might enjoy...'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('The Matrix Reloaded (2003-05-15)'));
+    expect(mockTestResponse).toHaveBeenCalledWith(message, expect.stringContaining('John Wick (2014-10-24)'));
   
     expect(findSimilarMovies).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'The Matrix' }),

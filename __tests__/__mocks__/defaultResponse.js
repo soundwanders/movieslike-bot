@@ -1,4 +1,4 @@
-const testResponse = async (message, response) => {
+const defaultResponse = async (message, response) => {
   if (typeof message.reply === 'function') {
     const sentMessage = await message.reply(response);
     console.log(`Message sent: ${sentMessage}`);
@@ -9,5 +9,5 @@ const testResponse = async (message, response) => {
 };
 
 module.exports = {
-  testResponse,
+  defaultResponse,
 };
