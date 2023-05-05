@@ -56,6 +56,7 @@ const findSimilarMovies = async (queryMovie, releaseDate, genreMatches, actorMat
 
       return movie;
     });
+    
     // Filter our query movie from the API results
     similarMovies = similarMovies.filter((movie) => movie.id !== queryMovie.id);
 

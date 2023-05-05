@@ -1,7 +1,5 @@
-const mockBotResponse = jest.fn(async (message, response) => {
-  console.log(`Message sent: ${response}`);
-});
-
+const mockBotResponse = jest.fn(async () => {});
+        
 module.exports = {
   mockBotResponse,
 };
