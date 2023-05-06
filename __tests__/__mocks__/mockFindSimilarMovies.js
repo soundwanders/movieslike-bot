@@ -29,7 +29,6 @@ const mockFindSimilarMovies = (queryMovie, releaseDate, genreMatches, actorMatch
   }
 
   return sortedMovies;
-
 };
 
 module.exports = {

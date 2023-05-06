@@ -3,6 +3,8 @@ const { Client, IntentsBitField } = require('discord.js');
 const { mockBotResponse } = require('./__mocks__/mockBotResponse');
 const { mockFindSimilarMovies } = require('./__mocks__/mockFindSimilarMovies');
 const { mockGenerateMovieLinks } = require('./__mocks__/mockGenerateMovieLinks');
+const { mockMoviesArray } = require('./__mocks__/mockMoviesArray');
+const { mockSimilarityScore } = require('./__mocks__/mockSimilarityScore');
 const { defaultResponse } = require('./__mocks__/defaultResponse');
 const { movieslikeCommand } = require('../components/commands/movieslike');
 const { movieNamePattern, genrePattern, actorPattern, languagePattern } = require('../components/utils/regExPatterns');
@@ -150,71 +152,123 @@ describe('movieslikeCommand', () => {
   });
 
   // 6. RETURN RELEVANT SIMILAR MOVIES WHEN COMMAND INCLUDES ACTOR QUERY PARAM
-  it('should return similar movies using the GENRE query parameter', async () => {
+  it('should return a sorted list of movies based on actor query parameter', () => {
     const queryMovie = 'Movie 1';
-    const releaseDate = '';
-    const genreMatches = [28];
-    const actorMatches = [];
-    const languageMatches = [];
-    const expectedMovies = [
-      { id: 2, title: 'Movie 2', genre_ids: [28, 12], similarityScore: 1 },
-      { id: 3, title: 'Movie 3', genre_ids: [28, 18], similarityScore: 1 },
-    ];
-  
-    const result = await mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches);
-  
-    expect(result).toEqual(expectedMovies);
-  });
-  
-  // 7. RETURN RELEVANT SIMILAR MOVIES WHEN COMMAND INCLUDES GENRE QUERY PARAM
-  it('should return similar movies using the ACTOR query parameter', async () => {
-    const queryMovie = 'Movie 1';
-    const releaseDate = '';
+    const releaseDate = null;
     const genreMatches = [];
     const actorMatches = ['Actor 1'];
     const languageMatches = [];
-    const expectedMovies = [
-      { id: 2, title: 'Movie 2', genre_ids: [28, 12], similarityScore: 1 },
-      { id: 3, title: 'Movie 3', genre_ids: [35, 18], similarityScore: 1 },
-    ];
-
-    const result = await mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches);
-
-    expect(result).toEqual(expectedMovies);
-  });
+  
+    const filteredMovies = mockMoviesArray.filter((movie) => {
+      const hasReleaseDate = !releaseDate || movie.release_date === releaseDate;
+      const hasMatchingGenre = !genreMatches.length || genreMatches.every((genreId) => movie.genres.some((genre) => genre.id === genreId));
+      const hasMatchingActor = actorMatches.every((actorName) =>
+        movie.cast.some((castMember) => castMember.name === actorName)
+      );
+      const hasMatchingLanguage = !languageMatches.length || languageMatches.includes(movie.language);
+      return hasReleaseDate && hasMatchingGenre && hasMatchingActor && hasMatchingLanguage;
+    });
+  
+    const similarityScoredMovies = filteredMovies.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      genre_ids: movie.genres.map((genre) => genre.id),
+      similarityScore: mockSimilarityScore(queryMovie, movie.title),
+    }));
+  
+    const sortedMovies = similarityScoredMovies.sort((a, b) => b.similarityScore - a.similarityScore);
+  
+    expect(mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches)).toEqual(sortedMovies);
+  });  
+  
+  // 7. RETURN RELEVANT SIMILAR MOVIES WHEN COMMAND INCLUDES GENRE QUERY PARAM
+  it('should return a sorted list of movies based on genre query parameter', () => {
+    const queryMovie = 'Movie 1';
+    const releaseDate = null;
+    const genreMatches = [12];
+    const actorMatches = [];
+    const languageMatches = [];
+  
+    const filteredMovies = mockMoviesArray.filter((movie) => {
+      const hasReleaseDate = !releaseDate || movie.release_date === releaseDate;
+      const hasMatchingGenre = genreMatches.every((genreId) => movie.genres.some((genre) => genre.id === genreId));
+      const hasMatchingActor = !actorMatches.length || actorMatches.some((actorName) =>
+        movie.cast.some((castMember) => castMember.name === actorName)
+      );
+      const hasMatchingLanguage = !languageMatches.length || languageMatches.includes(movie.language);
+      return hasReleaseDate && hasMatchingGenre && hasMatchingActor && hasMatchingLanguage;
+    });
+  
+    const similarityScoredMovies = filteredMovies.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      genre_ids: movie.genres.map((genre) => genre.id),
+      similarityScore: mockSimilarityScore(queryMovie, movie.title),
+    }));
+  
+    const sortedMovies = similarityScoredMovies.sort((a, b) => b.similarityScore - a.similarityScore);
+  
+    expect(mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches)).toEqual(sortedMovies);
+  });  
 
   // 8. RETURN RELEVANT SIMILAR MOVIES WHEN COMMAND INCLUDES LANGUAGE QUERY PARAM
-  it('should return relevant similar movies using the LANGUAGE query parameter', async () => {
-    const queryMovie = 'Test Movie 1';
-    const releaseDate = '2022-01-01';
+  it('should return a sorted list of movies based on language query parameter', () => {
+    const queryMovie = 'Movie 1';
+    const releaseDate = null;
     const genreMatches = [];
     const actorMatches = [];
-    const languageMatches = ['en'];
-    const expectedMovies = [
-      { id: 2, title: 'Test Movie 2', genre_ids: [28, 80], similarityScore: 1 },
-      { id: 3, title: 'Test Movie 3', genre_ids: [18, 12], similarityScore: 1 }
-    ];
-
-    const result = await mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches);
-
-    expect(result).toEqual(expectedMovies);
-  });
+    const languageMatches = ['es'];
+  
+    const filteredMovies = mockMoviesArray.filter((movie) => {
+      const hasReleaseDate = !releaseDate || movie.release_date === releaseDate;
+      const hasMatchingGenre = !genreMatches.length || genreMatches.some((genreId) => movie.genres.some((genre) => genre.id === genreId));
+      const hasMatchingActor = !actorMatches.length || actorMatches.some((actorName) =>
+        movie.cast.some((castMember) => castMember.name === actorName)
+      );
+      const hasMatchingLanguage = languageMatches.includes(movie.language);
+      return hasReleaseDate && hasMatchingGenre && hasMatchingActor && hasMatchingLanguage;
+    });
+  
+    const similarityScoredMovies = filteredMovies.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      genre_ids: movie.genres.map((genre) => genre.id),
+      similarityScore: mockSimilarityScore(queryMovie, movie.title),
+    }));
+  
+    const sortedMovies = similarityScoredMovies.sort((a, b) => b.similarityScore - a.similarityScore);
+  
+    expect(mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches)).toEqual(sortedMovies);
+  });  
 
   // 9. RETURN RELEVANT SIMILAR MOVIES WHEN COMMAND INCLUDES *ALL* QUERY PARAMS
-  it('should return relevant similar movies using ALL query parametesr', async () => {
-    const queryMovie = 'Test Movie 1';
-    const releaseDate = '2022-01-01';
-    const genreMatches = ['Thriller'];
-    const actorMatches = ['Tom Hardy'];
+  it('should return relevant similar movies using ALL query parameters', async () => {
+    const queryMovie = 'Movie 1';
+    const releaseDate = null;
+    const genreMatches = [28];
+    const actorMatches = ['Actor 1'];
     const languageMatches = ['en'];
-    const expectedMovies = [
-      { id: 2, title: 'Test Movie 2', genre_ids: [28, 80], similarityScore: 1 },
-      { id: 3, title: 'Test Movie 3', genre_ids: [28, 35], similarityScore: 1 }
-    ];
 
-    const result = await mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches);
+    const filteredMovies = mockMoviesArray.filter((movie) => {
+      const hasReleaseDate = !releaseDate || movie.release_date === releaseDate;
+      const hasMatchingGenre = genreMatches.every((genreId) => movie.genres.some((genre) => genre.id === genreId));
+      const hasMatchingActor = actorMatches.every((actorName) =>
+        movie.cast.some((castMember) => castMember.name === actorName)
+      );
+      const hasMatchingLanguage = !languageMatches.length || languageMatches.includes(movie.language);
+      return hasReleaseDate && hasMatchingGenre && hasMatchingActor && hasMatchingLanguage;
+    });
 
-    expect(result).toEqual(expectedMovies);
+    const similarityScoredMovies = filteredMovies.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      genre_ids: movie.genres.map((genre) => genre.id),
+      similarityScore: mockSimilarityScore(queryMovie, movie.title),
+    }));
+
+    const sortedMovies = similarityScoredMovies.sort((a, b) => b.similarityScore - a.similarityScore);
+
+    expect(mockFindSimilarMovies(queryMovie, releaseDate, genreMatches, actorMatches, languageMatches)).toEqual(sortedMovies);
   });
 
   // 10. RETURN VALID MOVIE LINKS FROM GENERATEMOVIELINKS
